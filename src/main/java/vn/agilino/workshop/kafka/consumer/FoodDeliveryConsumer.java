@@ -22,11 +22,21 @@ public class FoodDeliveryConsumer {
 
     final Map<Integer, FoodOrderDTO> orders = new ConcurrentHashMap<>();
 
-    @KafkaListener(topics = "${spring.kafka.topic-name}",
-            groupId = KafkaGroup.GROUP_STUDENT,
-            containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = "${spring.kafka.topic-name}", groupId = KafkaGroup.GROUP_STUDENT, containerFactory = "kafkaListenerContainerFactory")
     public void foodOrderConsumer(FoodOrderDTO foodOrderDTO) {
         LOG.info(foodOrderDTO.toString());
+
+        System.out.println(foodOrderDTO.getFoodName());
+
+        if (foodOrderDTO.getId() != 0 && foodOrderDTO.getFoodName() != null
+                && foodOrderDTO.getAddress() != null) {
+            for (String checkFood : ALLOWED_FOODS) {
+                if (checkFood.equals(foodOrderDTO.getFoodName())) {
+                    orders.put(foodOrderDTO.getId(), foodOrderDTO);
+                    break;
+                }
+            }
+        }
         // TODO store received order in orders map
         // You can add basic validation of your food order before accepting it
         // You should also verify that the food is one of ALLOWED_FOODS.
@@ -35,6 +45,10 @@ public class FoodDeliveryConsumer {
     public FoodOrderDTO getOrder(int id) {
         // TODO: implement getting order from orders Map
         // You can implement a blocking solution to wait for the order to arrive.
-        return null;
+
+        FoodOrderDTO foodOrderData = new FoodOrderDTO();
+        foodOrderData = orders.get(id);
+        orders.remove(id);
+        return foodOrderData;
     }
 }
